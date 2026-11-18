@@ -1,0 +1,356 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{.CSRFToken}}">
+  <title>{{.Title}} · Mirador</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body{{if .Compact}} class="compact" {{end}}>
+  <a href="#main-content" class="skip-link visually-hidden">Skip to main content</a>
+  <header class="topbar">
+    <a class="brand" href="/">Mirador</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/" class="{{if eq .Nav "accounts"}}active{{end}}">Accounts</a>
+      <a href="/tasks" class="{{if eq .Nav "tasks"}}active{{end}}">Tasks</a>
+      <a href="/tags" class="{{if eq .Nav "tags"}}active{{end}}">Tags</a>
+      <a href="/archive" class="{{if eq .Nav "trash"}}active{{end}}">Archive</a>
+      <a href="/api" class="{{if eq .Nav "api"}}active{{end}}">API</a>
+      {{if or (eq .Nav "accounts") (eq .Nav "tasks") (eq .Nav "tags") (eq .Nav "trash")}}
+      <button class="button ghost small" type="button" data-toggle-compact {{if .Compact}}aria-pressed="true"
+        {{end}}>Compact</button>
+      {{end}}
+    </nav>
+    <div class="top-actions">
+      <button class="button ghost small" type="button" data-open-export>Export</button>
+      <button class="button ghost small" type="button" data-open-import>Import</button>
+    </div>
+  </header>
+
+  {{if or (eq .Nav "accounts") (eq .Nav "tasks")}}
+  <form class="tagbar filterbar" method="get" action="{{.Path}}" data-filter-form>
+    <span class="muted">Filter</span>
+    <input class="filter-search" type="search" name="q" value="{{.Search}}" placeholder="{{if eq .Nav "accounts"}}Search account name{{else}}Search tasks or accounts{{end}}" aria-label="{{if eq .Nav "accounts"}}Search account name{{else}}Search tasks or accounts{{end}}">
+    {{if eq .Nav "accounts"}}
+    <label class="check compact"><input type="checkbox" name="show_done" value="1" {{if .ShowDone}}checked{{end}}> Show
+      done</label>
+    {{end}}
+    {{if eq .Nav "tasks"}}
+    {{if ne .Status "completed"}}
+    <label class="check compact"><input type="checkbox" name="show_done" value="1" {{if .ShowDone}}checked{{end}}> Show
+      done</label>
+    {{end}}
+    {{end}}
+    {{if .FilterCategories}}
+    <details class="facet-menu" data-facet="category">
+      <summary class="button ghost small">Category{{if .CategoryFilters}} <span class="facet-count">{{len
+          .CategoryFilters}}</span>{{end}}</summary>
+      <div class="facet-panel" role="group" aria-label="Category">
+        {{range .FilterCategories}}
+        <label class="check compact"><input type="checkbox" name="category_id" value="{{.ID}}" {{if $.CategorySelected
+            .ID}}checked{{end}}> {{.Name}}</label>
+        {{end}}
+      </div>
+    </details>
+    {{end}}
+    {{if .CSMOptions}}
+    <details class="facet-menu" data-facet="csm">
+      <summary class="button ghost small">CSM{{if .CSMFilters}} <span class="facet-count">{{len
+          .CSMFilters}}</span>{{end}}</summary>
+      <div class="facet-panel" role="group" aria-label="CSM">
+        {{range .CSMOptions}}
+        <label class="check compact"><input type="checkbox" name="csm" value="{{.}}" {{if $.CSMSelected
+            .}}checked{{end}}> {{.}}</label>
+        {{end}}
+      </div>
+    </details>
+    {{end}}
+    {{if .AEOptions}}
+    <details class="facet-menu" data-facet="ae">
+      <summary class="button ghost small">AE{{if .AEFilters}} <span class="facet-count">{{len .AEFilters}}</span>{{end}}
+      </summary>
+      <div class="facet-panel" role="group" aria-label="AE">
+        {{range .AEOptions}}
+        <label class="check compact"><input type="checkbox" name="ae" value="{{.}}" {{if $.AESelected .}}checked{{end}}>
+          {{.}}</label>
+        {{end}}
+      </div>
+    </details>
+    {{end}}
+    <details class="facet-menu" data-facet="churn">
+      <summary class="button ghost small">Churn{{if .ChurnFilters}} <span class="facet-count">{{len
+          .ChurnFilters}}</span>{{end}}</summary>
+      <div class="facet-panel" role="group" aria-label="Churn risk">
+        <label class="check compact"><input type="checkbox" name="churn" value="true" {{if $.ChurnSelected true
+            }}checked{{end}}> At risk</label>
+        <label class="check compact"><input type="checkbox" name="churn" value="false" {{if $.ChurnSelected false
+            }}checked{{end}}> Not at risk</label>
+      </div>
+    </details>
+    {{if .Tags}}
+    <details class="facet-menu" data-facet="tag">
+      <summary class="button ghost small">Tags{{if .TagFilters}} <span class="facet-count">{{len
+          .TagFilters}}</span>{{end}}</summary>
+      <div class="facet-panel" role="group" aria-label="Tags">
+        {{range .Tags}}
+        <label class="check compact"><input type="checkbox" name="tag" value="{{.ID}}" {{if $.TagSelected
+            .ID}}checked{{end}}> <span class="tag-chip" style="--tag-color: {{.Color}}">{{.Name}}</span> <span
+            class="count">{{.UsageCount}}</span></label>
+        {{end}}
+      </div>
+    </details>
+    {{end}}
+    {{if .ShowDone}}<input type="hidden" name="show_done" value="1">{{end}}
+    {{if .AccountFiltered}}<a class="button ghost small"
+      href="{{.Path}}{{if .ShowDone}}?show_done=1{{end}}">Clear</a>{{end}}
+  </form>
+  {{end}}
+
+  {{if .Error}}<div class="banner error">{{.Error}}</div>{{end}}
+
+  {{if or (eq .Nav "accounts") (eq .Nav "tasks")}}
+  <main class="container split" id="main-content">
+    <div class="split-left">
+      {{template "content" .}}
+    </div>
+    <div class="split-right" id="account-details-panel" hidden>
+      <div class="panel-header">
+        <button type="button" class="button ghost" data-close-account-details title="Back" aria-label="Back">←</button>
+        <h2 id="panel-account-name">Account</h2>
+        <div class="panel-header-actions" id="panel-header-actions"></div>
+      </div>
+      <div class="panel-content" id="panel-account-content">
+        <p class="muted">Select an account to view details.</p>
+      </div>
+    </div>
+    <button type="button" class="split-divider" role="separator" aria-orientation="vertical" aria-label="Resize panels. Use arrow keys to adjust."
+      aria-valuenow="50" aria-valuemin="20" aria-valuemax="80"></button>
+  </main>
+  {{else}}
+  <main class="container" id="main-content">
+    {{template "content" .}}
+  </main>
+  {{end}}
+
+  <footer class="footer">
+    <span>Local only · <a href="/health">health</a></span>
+    <span class="footer-middle">
+      <span>Today: {{.Today}}</span><span class="dot">·</span> <span>Found a bug? Have an issue? <a href="https://github.com/jplassnibatt/mirador/issues" id="issue-link" target="_blank" rel="noopener noreferrer">Open an issue on GitHub</a></span>
+    </span>
+    <div class="footer-right">
+      <span class="app-version">v{{.Version}}</span>
+      <button class="button ghost small" type="button" data-check-update data-app-version="{{.Version}}">Check for updates</button>
+    </div>
+  </footer>
+
+  <dialog id="category-dialog" class="dialog" closedby="any" aria-labelledby="category-dialog-title">
+    <form method="dialog" data-api="/api/v1/categories" data-method="PUT" data-kind="category-edit">
+      <h2 id="category-dialog-title">Edit category</h2>
+      <input type="hidden" name="id">
+      <label>Name <input name="name" required maxlength="200" autofocus></label>
+      <label>Color <input type="color" name="color" value="#3b82f6"></label>
+      <label class="check"><input type="checkbox" name="expanded" checked> Expanded</label>
+      <div class="dialog-actions">
+        <button type="button" class="button ghost" data-close-dialog>Cancel</button>
+        <button type="submit" class="button">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="tag-dialog" class="dialog" closedby="any" aria-labelledby="tag-dialog-title">
+    <form method="dialog" data-api="/api/v1/tags" data-method="PUT" data-kind="tag-edit">
+      <h2 id="tag-dialog-title">Edit tag</h2>
+      <input type="hidden" name="id">
+      <label>Name <input name="name" required maxlength="200" autofocus></label>
+      <label>Color <input type="color" name="color" value="#3b82f6"></label>
+      <div class="dialog-actions">
+        <button type="button" class="button ghost" data-close-dialog>Cancel</button>
+        <button type="submit" class="button">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="account-dialog" class="dialog" closedby="any" aria-labelledby="account-dialog-title">
+    <form method="dialog" data-api="/api/v1/accounts" data-method="PUT" data-kind="account-edit">
+      <h2 id="account-dialog-title">Edit account</h2>
+      <input type="hidden" name="id">
+      <label>Category
+        <select name="category_id">
+          {{range .FilterCategories}}
+          <option value="{{.ID}}">{{.Name}}</option>
+          {{end}}
+        </select>
+      </label>
+      <label>Name <input name="name" required maxlength="200" autofocus></label>
+      <label>SFDC
+        <div class="url-field" contenteditable="true" data-field="sfdc" aria-label="SFDC Account link"
+          placeholder="SFDC's Account hyperlink — URLs and [text](url) become links"></div>
+        <input type="hidden" name="sfdc" value="">
+      </label>
+      <label>Subdomain
+        <div class="url-field" contenteditable="true" data-field="subdomain" aria-label="Subdomain link"
+          placeholder="pd-admin link — URLs and [text](url) become links"></div>
+        <input type="hidden" name="subdomain" value="">
+      </label>
+      <label>CSM name
+        <input name="csm_name" placeholder="CSM name" maxlength="200">
+      </label>
+      <label>ChatApp CSM link
+        <div class="url-field" contenteditable="true" data-field="csm_link" aria-label="ChatApp CSM link"
+          placeholder="Slack's Copy link to profile — URLs and [text](url) become links"></div>
+        <input type="hidden" name="csm_link" value="">
+      </label>
+      <label>AE name
+        <input name="ae_name" placeholder="AE name" maxlength="200">
+      </label>
+      <label>ChatApp AE link
+        <div class="url-field" contenteditable="true" data-field="ae_link" aria-label="ChatApp AE link"
+          placeholder="Slack's Copy link to profile — URLs and [text](url) become links"></div>
+        <input type="hidden" name="ae_link" value="">
+      </label>
+      <label>ChatApp channel
+        <div class="url-field" contenteditable="true" data-field="chatapp_channel" aria-label="ChatApp channel"
+          placeholder="Slack's Copy/Copy name — URLs and [text](url) become links"></div>
+        <input type="hidden" name="chatapp_channel" value="">
+      </label>
+      <label>ARR
+        <input name="arr" placeholder="Annual recurring revenue" maxlength="200">
+      </label>
+      <label>Churn risk
+        <select name="churn_risk">
+          <option value="">—</option>
+          <option value="true">At risk</option>
+          <option value="false">Not at risk</option>
+        </select>
+      </label>
+      <label>Renewal date
+        <input type="date" name="renewal_date">
+      </label>
+      <label>Details
+        <div class="url-field notes-field" contenteditable="true" data-field="details" data-rich aria-label="Details"
+          placeholder="Details (optional) — URLs and [text](url) become links"></div>
+        <input type="hidden" name="details" value="">
+      </label>
+      <fieldset class="tags-field">
+        <legend>Tags</legend>
+        {{range .Tags}}
+        <label class="check compact"><input type="checkbox" name="tag_ids" value="{{.ID}}"> <span class="tag-chip"
+            style="--tag-color: {{.Color}}">{{.Name}}</span></label>
+        {{end}}
+      </fieldset>
+      <div class="dialog-actions">
+        <button type="button" class="button ghost" data-close-dialog>Cancel</button>
+        <button type="submit" class="button">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="task-dialog" class="dialog" closedby="any" aria-labelledby="task-dialog-title">
+    <form id="task-edit-form" method="dialog" data-api="/api/v1/tasks" data-method="PUT" data-kind="task-edit">
+      <h2 id="task-dialog-title">Edit task</h2>
+      <input type="hidden" name="id">
+      <label>Title <input name="title" placeholder="Task name" required maxlength="300" autofocus></label>
+      <label>Due date <input type="date" name="due_date" required></label>
+      <label>Ticket #
+        <div class="url-field" contenteditable="true" data-field="ticket" data-rich aria-label="Ticket"
+          placeholder="Ticket # (optional) — URLs and [text](url) become links"></div>
+        <input type="hidden" name="ticket" value="">
+      </label>
+      <label>Details
+        <div class="url-field notes-field" contenteditable="true" data-field="details" data-rich aria-label="Details"
+          placeholder="Details (optional) — URLs and [text](url) become links"></div>
+        <input type="hidden" name="details" value="">
+      </label>
+      <label class="check"><input type="checkbox" name="completed"> Completed</label>
+    </form>
+    <section class="task-notes">
+      <h3>Task notes</h3>
+      <div id="task-notes-list" class="task-notes-list"></div>
+    </section>
+    <div class="dialog-actions">
+      <button type="button" class="button ghost" data-close-dialog>Cancel</button>
+      <button type="button" class="button" data-save-task>Save</button>
+    </div>
+  </dialog>
+
+  <dialog id="export-dialog" class="dialog" closedby="any" aria-labelledby="export-dialog-title">
+    <form id="export-form">
+      <h2 id="export-dialog-title">Export</h2>
+      <p class="muted">Choose the format and whether to include archived rows.</p>
+      <label>Format
+        <select name="format" autofocus>
+          <option value="json" selected>JSON</option>
+          <option value="csv">CSV</option>
+        </select>
+      </label>
+      <label>Include archived rows
+        <select name="active_only">
+          <option value="0">Yes</option>
+          <option value="1">No (active only)</option>
+        </select>
+      </label>
+      <fieldset class="sections">
+        <legend>Sections</legend>
+        <label><input type="checkbox" name="sections" value="categories" checked> Categories</label>
+        <label><input type="checkbox" name="sections" value="tags" checked> Tags</label>
+        <label><input type="checkbox" name="sections" value="accounts" checked> Accounts</label>
+        <label><input type="checkbox" name="sections" value="tasks" checked> Tasks</label>
+      </fieldset>
+      <div class="dialog-actions">
+        <button type="button" class="button ghost" data-close-dialog>Cancel</button>
+        <button type="submit" class="button">Export</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="import-dialog" class="dialog" closedby="any" aria-labelledby="import-dialog-title">
+    <form id="import-form">
+      <h2 id="import-dialog-title">Import</h2>
+      <p class="muted">Choose the format, input method, and how to handle name conflicts.</p>
+      <label>Format
+        <select name="format" autofocus>
+          <option value="json" selected>JSON</option>
+          <option value="csv">CSV</option>
+        </select>
+      </label>
+      <div id="import-input-options">
+        <label>Select file
+          <input type="file" name="file" accept=".csv,text/csv,.json">
+        </label>
+        <p class="muted" id="import-paste-hint" style="margin-top:0.5rem">Or paste content:</p>
+        <label id="import-json-label">JSON content
+          <textarea name="json" rows="8" spellcheck="false"></textarea>
+        </label>
+      </div>
+      <label>When names match
+        <select name="conflict">
+          <option value="duplicate">Duplicate (rename imported copies)</option>
+          <option value="override">Override existing records</option>
+        </select>
+      </label>
+      <fieldset class="sections">
+        <legend>Sections</legend>
+        <label><input type="checkbox" name="sections" value="categories" checked> Categories</label>
+        <label><input type="checkbox" name="sections" value="tags" checked> Tags</label>
+        <label><input type="checkbox" name="sections" value="accounts" checked> Accounts</label>
+        <label><input type="checkbox" name="sections" value="tasks" checked> Tasks</label>
+      </fieldset>
+      <div class="dialog-actions">
+        <button type="button" class="button ghost" data-close-dialog>Cancel</button>
+        <button type="submit" class="button">Import</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <span id="toast-message"></span>
+    <button type="button" id="toast-close" class="toast-close" aria-label="Dismiss notification">×</button>
+  </div>
+  </body>
+
+</html>
+{{end}}

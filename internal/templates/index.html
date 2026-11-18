@@ -1,0 +1,133 @@
+{{define "content"}}
+<section class="page-head">
+  <div>
+    <h1>Accounts <span class="count">{{.AccountCount}}</span></h1>
+    <p class="muted">Categories contain accounts; accounts contain tasks. Drag a task within its due-date section to reorder it.</p>
+  </div>
+  <div class="new-actions">
+    <button class="button small new-dropdown" data-new-menu>
+      New <span class="new-arrow">▼</span>
+    </button>
+    <div class="new-menu" hidden>
+      <button type="button" class="menu-item" data-new-form="category">Category</button>
+      <button type="button" class="menu-item" data-new-form="account">Account</button>
+    </div>
+  </div>
+</section>
+
+<!-- New item creation forms (shown inline when selected from the New menu) -->
+<div class="new-forms" id="new-forms">
+  <form data-api="/api/v1/categories" data-method="POST" data-kind="category-create" hidden>
+    <div class="form-row">
+      <label>Name <input name="name" placeholder="Category name" required maxlength="200"></label>
+      <label>Color <input type="color" name="color" value="#3b82f6"></label>
+    </div>
+    <button class="button small" type="submit">Create category</button>
+    <button type="button" class="button ghost small" data-close-new-form>Cancel</button>
+  </form>
+  <form data-api="/api/v1/accounts" data-method="POST" data-kind="account-create" hidden>
+    <label>Category
+      <select name="category_id">
+        {{range .FilterCategories}}
+        <option value="{{.ID}}">{{.Name}}</option>
+        {{end}}
+      </select>
+    </label>
+    <input name="name" placeholder="Account name" required maxlength="200">
+    <label>SFDC
+      <div class="url-field" contenteditable="true" data-field="sfdc" aria-label="SFDC Account link" placeholder="SFDC's Account hyperlink — URLs and [text](url) become links"></div>
+      <input type="hidden" name="sfdc" value="">
+    </label>
+    <label>Subdomain
+      <div class="url-field" contenteditable="true" data-field="subdomain" aria-label="Subdomain link" placeholder="pd-admin link — URLs and [text](url) become links"></div>
+      <input type="hidden" name="subdomain" value="">
+    </label>
+    <label>CSM name
+      <input name="csm_name" placeholder="CSM name" maxlength="200">
+    </label>
+    <label>ChatApp CSM link
+      <div class="url-field" contenteditable="true" data-field="csm_link" aria-label="ChatApp CSM link" placeholder="Slack's Copy link to profile — URLs and [text](url) become links"></div>
+      <input type="hidden" name="csm_link" value="">
+    </label>
+    <label>AE name
+      <input name="ae_name" placeholder="AE name" maxlength="200">
+    </label>
+    <label>ChatApp AE link
+      <div class="url-field" contenteditable="true" data-field="ae_link" aria-label="ChatApp AE link" placeholder="Slack's Copy link to profile — URLs and [text](url) become links"></div>
+      <input type="hidden" name="ae_link" value="">
+    </label>
+    <label>ChatApp channel
+      <div class="url-field" contenteditable="true" data-field="chatapp_channel" aria-label="ChatApp channel" placeholder="Slack's Copy/Copy name — URLs and [text](url) become links"></div>
+      <input type="hidden" name="chatapp_channel" value="">
+    </label>
+    <label>ARR
+      <input name="arr" placeholder="Annual recurring revenue" maxlength="200">
+    </label>
+    <label>Churn risk
+      <select name="churn_risk">
+        <option value="">—</option>
+        <option value="true">At risk</option>
+        <option value="false">Not at risk</option>
+      </select>
+    </label>
+    <label>Renewal date
+      <input type="date" name="renewal_date">
+    </label>
+    <label>Details
+      <div class="url-field notes-field" contenteditable="true" data-field="details" data-rich aria-label="Details" placeholder="Details (optional) — URLs and [text](url) become links"></div>
+      <input type="hidden" name="details" value="">
+    </label>
+    <fieldset class="tags-field">
+      <legend>Tags</legend>
+      {{range $.Tags}}
+      <label class="check compact"><input type="checkbox" name="tag_ids" value="{{.ID}}"> <span class="tag-chip" style="--tag-color: {{.Color}}">{{.Name}}</span></label>
+      {{end}}
+    </fieldset>
+    <button class="button small" type="submit">Create account</button>
+    <button type="button" class="button ghost small" data-close-new-form>Cancel</button>
+  </form>
+</div>
+
+{{if not .Categories}}
+  <div class="empty">{{if .AccountFiltered}}No accounts match the filter.{{else}}No categories yet. Create one to get started.{{end}}</div>
+{{end}}
+
+<div class="categories">
+  {{range .Categories}}
+    <section class="category" data-category-id="{{.Category.ID}}"
+             draggable="true"
+             data-draggable-category
+             data-category-sort-order="{{.Category.SortOrder}}">
+      <header class="category-head">
+        <span class="drag-handle" title="Drag to reorder category" aria-hidden="true">⋮⋮</span>
+        <button class="icon expand" type="button"
+                data-expand-category="{{.Category.ID}}"
+                data-expanded="{{if .Category.Expanded}}1{{else}}0{{end}}"
+                title="{{if .Category.Expanded}}Collapse{{else}}Expand{{end}} category">
+          {{if .Category.Expanded}}▾{{else}}▸{{end}}
+        </button>
+        <span class="swatch" style="background: {{.Category.Color}}" aria-hidden="true"></span>
+        <h2>{{.Category.Name}}</h2>
+        <span class="count">{{len .Accounts}} {{if eq (len .Accounts) 1}}account{{else}}accounts{{end}}</span>
+        <div class="row-actions">
+          <button class="button ghost tiny" type="button"
+                  data-edit-category
+                  data-id="{{.Category.ID}}"
+                  data-name="{{.Category.Name}}"
+                  data-color="{{.Category.Color}}"
+                  data-sort-order="{{.Category.SortOrder}}"
+                  data-expanded="{{if .Category.Expanded}}1{{else}}0{{end}}">Edit <span class="visually-hidden">category "{{.Category.Name}}"</span></button>
+          <button class="button ghost tiny archive" type="button" data-delete="/api/v1/categories/{{.Category.ID}}" title="Archive category">📦</button>
+        </div>
+      </header>
+
+      {{if .Category.Expanded}}
+        <ul class="account-list">
+          {{range .Accounts}}{{template "account-row" .}}{{end}}
+        </ul>
+        {{if not .Accounts}}<p class="muted empty-inline">No accounts in this category.</p>{{end}}
+      {{end}}
+    </section>
+  {{end}}
+</div>
+{{end}}

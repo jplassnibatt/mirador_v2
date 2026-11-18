@@ -1,0 +1,54 @@
+{{define "content"}}
+<section class="page-head">
+  <div>
+    <h1>API keys</h1>
+    <p class="muted">API keys let scripts and external tools access Mirador without a browser session.</p>
+  </div>
+</section>
+
+<a class="button ghost small" href="/api-docs" style="margin-bottom: 1rem; display: inline-block;">View API documentation →</a>
+
+<!-- Create API key form -->
+<section class="card">
+  <h2>Create API key</h2>
+  <form id="api-key-form">
+    <label><input name="name" placeholder="e.g. backup script" required maxlength="200"></label>
+    <button class="button" type="submit">Create key</button>
+    <p class="muted">The full key will be shown only once after creation.</p>
+  </form>
+</section>
+
+<!-- Existing API keys -->
+<section class="card">
+  <h2>Existing keys</h2>
+  {{if not .APIKeys}}
+  <p class="muted">No API keys yet.</p>
+  {{else}}
+  <ul class="key-list">
+    {{range .APIKeys}}
+    <li class="key-row" data-key-id="{{.ID}}">
+      <div>
+        <strong>{{.Name}}</strong>
+        <span class="muted prefix">{{.KeyPrefix}}</span>
+        <span class="muted">created {{fmtDeletedAt .CreatedAt}}</span>
+      </div>
+      <button class="button ghost tiny danger" type="button" data-delete-key data-id="{{.ID}}"
+        title="Revoke key">🗑️</button>
+    </li>
+    {{end}}
+  </ul>
+  {{end}}
+</section>
+
+<!-- New key revealed here after creation -->
+<div id="new-key-shown" hidden>
+  <section class="card">
+    <h2>New API key</h2>
+    <p class="muted">Copy this key now — it won’t be shown again:</p>
+    <div class="key-value">
+      <span id="new-key-value"></span>
+      <button class="button ghost tiny" type="button" data-copy-key>Copy</button>
+    </div>
+  </section>
+</div>
+{{end}}

@@ -1,0 +1,56 @@
+{{define "content"}}
+<section class="page-head">
+  <div>
+    <h1>API documentation</h1>
+    <p class="muted">All endpoints are under <code>/api/v1</code>. Authenticate with an API key via the <code>Mirador-Api-Key</code> header.</p>
+  </div>
+</section>
+
+{{range .APISections}}
+<section class="api-section">
+  <h2>{{.Title}}</h2>
+  <p class="muted">{{.Description}}</p>
+  <table class="api-table">
+    <thead>
+      <tr><th style="width:6%">Method</th><th style="width:50%">Endpoint</th><th style="width:10%">Required</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      {{range .Endpoints}}
+      <tr>
+        <td><code class="api-method">{{.Method}}</code></td>
+        <td><code class="api-endpoint">{{.Path}}</code>{{if .Params}} <span class="muted">{{.Params}}</span>{{end}}</td>
+        <td>{{if .Required}}<span class="badge">{{join .Required ", "}}</span>{{end}}</td>
+        <td>{{.Description}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}
+
+<section class="api-section">
+  <h2>Authentication</h2>
+  <p class="muted">Create an API key on the <a href="/api">API</a> page. The full key is shown once at creation.</p>
+  <pre><code>curl -H "Mirador-Api-Key: mir_abcd1234..." \
+  http://localhost:8080/api/v1/accounts</code></pre>
+</section>
+
+<section class="api-section">
+  <h2>Examples</h2>
+  <h3>List all accounts</h3>
+  <pre><code>curl -H "Mirador-Api-Key: $MIRADOR_APIKEY" \
+  http://localhost:8080/api/v1/accounts</code></pre>
+  <h3>Create a task</h3>
+  <pre><code>curl -H "Mirador-Api-Key: $MIRADOR_APIKEY" \
+  -d '{"account_id":1,"title":"Call client","due_date":"2026-12-01","details":"Follow up"}' \
+  http://localhost:8080/api/v1/tasks</code></pre>
+  <h3>Mark a task complete</h3>
+  <pre><code>curl -H "Mirador-Api-Key: $MIRADOR_APIKEY" \
+  -d '{"completed":true}' \
+  -X PUT http://localhost:8080/api/v1/tasks/1</code></pre>
+  <h3>Add a note to a task</h3>
+  <pre><code>curl -H "Mirador-Api-Key: $MIRADOR_APIKEY" \
+  -d '{"note":"Left voicemail"}' \
+  http://localhost:8080/api/v1/tasks/1/notes</code></pre>
+</section>
+{{end}}

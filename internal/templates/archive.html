@@ -1,0 +1,78 @@
+{{define "content"}}
+<section class="page-head">
+  <div>
+    <h1>Archive</h1>
+    <p class="muted">Archived items stay here until you restore them or delete them permanently.</p>
+  </div>
+</section>
+
+{{if and (not .Trash.Categories) (not .Trash.Accounts) (not .Trash.Tasks)}}
+<div class="empty">Archive is empty.</div>
+{{end}}
+
+<section class="trash-section">
+  <h2>Categories ({{len .Trash.Categories}})</h2>
+  {{if not .Trash.Categories}}<p class="muted">No deleted categories.</p>{{end}}
+  <ul class="trash-list">
+    {{range .Trash.Categories}}
+    <li class="trash-row">
+      <div>
+        <strong>{{.Name}}</strong>
+        <span class="muted">archived {{fmtDeletedAt .DeletedAt}}</span>
+      </div>
+      <div class="row-actions">
+        <button class="button ghost tiny" type="button"
+          data-restore-json='{"categories":[{{.ID}}],"with_children":true}'>Restore with children</button>
+        <button class="button ghost tiny" type="button"
+          data-restore-json='{"categories":[{{.ID}}],"with_children":false}'>Restore only</button>
+        <button class="button ghost tiny danger" type="button"
+          data-purge="/api/v1/categories/{{.ID}}?permanent=true">Delete forever</button>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+</section>
+
+<section class="trash-section">
+  <h2>Accounts ({{len .Trash.Accounts}})</h2>
+  {{if not .Trash.Accounts}}<p class="muted">No deleted accounts.</p>{{end}}
+  <ul class="trash-list">
+    {{range .Trash.Accounts}}
+    <li class="trash-row">
+      <div>
+        <strong>{{.Name}}</strong>
+        <span class="muted">{{.CategoryName}} · archived {{fmtDeletedAt .DeletedAt}}</span>
+      </div>
+      <div class="row-actions">
+        <button class="button ghost tiny" type="button"
+          data-restore-json='{"accounts":[{{.ID}}],"with_children":true}'>Restore with tasks</button>
+        <button class="button ghost tiny" type="button"
+          data-restore-json='{"accounts":[{{.ID}}],"with_children":false}'>Restore only</button>
+        <button class="button ghost tiny danger" type="button"
+          data-purge="/api/v1/accounts/{{.ID}}?permanent=true">Delete forever</button>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+</section>
+
+<section class="trash-section">
+  <h2>Tasks ({{len .Trash.Tasks}})</h2>
+  {{if not .Trash.Tasks}}<p class="muted">No deleted tasks.</p>{{end}}
+  <ul class="trash-list">
+    {{range .Trash.Tasks}}
+    <li class="trash-row">
+      <div>
+        <strong>{{.Title}}</strong>
+        <span class="muted">{{.AccountName}} · due {{.DueDate}} · archived {{fmtDeletedAt .DeletedAt}}</span>
+      </div>
+      <div class="row-actions">
+        <button class="button ghost tiny" type="button" data-restore-json='{"tasks":[{{.ID}}]}'>Restore</button>
+        <button class="button ghost tiny danger" type="button" data-purge="/api/v1/tasks/{{.ID}}?permanent=true">Delete
+          forever</button>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+</section>
+{{end}}

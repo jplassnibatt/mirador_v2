@@ -1,0 +1,57 @@
+{{define "task-row"}}
+<li class="task-row {{if .Task.Completed}}done{{end}} {{if .Task.Overdue}}overdue{{end}}" data-task-id="{{.Task.ID}}"
+  data-due-date="{{.Task.DueDate}}" data-sort-order="{{.Task.SortOrder}}" data-account-id="{{.Task.AccountID}}" {{if
+  .Draggable}}draggable="true" {{end}}>
+  <span class="drag-handle" title="{{if .Draggable}}Drag within the same due date{{else}}Completed task{{end}}"
+    aria-hidden="true">⋮⋮</span>
+  <input type="checkbox" class="task-check" data-toggle-task="{{.Task.ID}}" {{if .Task.Completed}}checked{{end}}
+    aria-label="Mark task complete or incomplete">
+  <div class="task-main">
+    {{if .OpenDetails}}
+    <button type="button" class="task-title task-title-link" data-open-task-details data-id="{{.Task.ID}}"
+      data-account-id="{{.Task.AccountID}}" {{if .Draggable}}draggable="true" {{end}}>{{.Task.Title}}</button>
+    {{else}}
+    <span class="task-title">{{.Task.Title}}</span>
+    {{end}}
+    <span class="count">{{.Task.NotesCount}} {{if eq .Task.NotesCount 1}}note{{else}}notes{{end}}</span>
+    <div class="task-meta">
+      <span class="due">{{dueLabel .Task.DueDate}}</span>
+      {{if .Task.Overdue}}<span class="badge overdue-badge">⚠ Overdue{{with overdueDays .Task.DueDate}}
+        {{.}}d{{end}}</span>{{end}}
+      {{if .ShowAccount}}<span class="crumb">{{.Task.CategoryName}} / {{.Task.AccountName}}</span>{{end}}
+      {{if .MatchingFilters}}<span class="crumb-match muted">- Matching filters:
+        {{range $i, $f := .MatchingFilters}}
+        {{if $i}} - {{end}}
+        {{if $f.IsTag}}<span class="tag-chip" style="--tag-color: {{$f.Color}}">{{$f.Label}}</span>{{else}}<span
+          class="strong">{{$f.Label}}</span>{{end}}
+        {{end}}
+      </span>{{end}}
+    </div>
+  </div>
+  <div class="row-actions">
+    <button class="button ghost tiny" type="button" data-edit-task data-id="{{.Task.ID}}" data-title="{{.Task.Title}}"
+      data-ticket="{{.Task.Ticket}}" data-due-date="{{.Task.DueDate}}" data-details="{{.Task.Details}}"
+      data-completed="{{if .Task.Completed}}1{{else}}0{{end}}">Edit <span class="visually-hidden">task "{{.Task.Title}}"</span></button>
+    <button class="button ghost tiny archive danger" type="button"
+            data-delete="/api/v1/tasks/{{.Task.ID}}"
+            title="Archive task">📦</button>
+  </div>
+</li>
+{{end}}
+
+{{define "account-row"}}
+<li class="account-row" data-account-id="{{.Account.ID}}" draggable="true" data-draggable-account
+  data-account-sort-order="{{.Account.SortOrder}}">
+  <div class="account-head">
+    <span class="drag-handle" title="Drag to move to another category" aria-hidden="true">⋮⋮</span>
+    <div class="account-title">
+      <button type="button" class="account-name" data-open-account-details
+        data-id="{{.Account.ID}}">{{.Account.Name}}</button>
+      <span class="count">{{len .Tasks}} {{if eq (len .Tasks) 1}}task{{else}}tasks{{end}}</span>
+      <div class="account-meta">
+        {{range .Account.Tags}}<span class="tag-chip" style="--tag-color: {{.Color}}">{{.Name}}</span>{{end}}
+      </div>
+    </div>
+  </div>
+</li>
+{{end}}

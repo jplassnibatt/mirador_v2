@@ -1,0 +1,35 @@
+{{define "content"}}
+<section class="page-head">
+  <div>
+    <h1>Tasks <span class="count">{{.TaskCount}}</span></h1>
+    <div class="filter-mode">
+      <label class="pill {{if not (eq .Status "completed")}}active{{end}}">
+        <input type="radio" name="status" value="open" {{if not (eq .Status "completed")}}checked{{end}}> Open <span class="count">{{.OpenTaskCount}}</span>
+      </label>
+      <label class="pill {{if eq .Status "completed"}}active{{end}}">
+        <input type="radio" name="status" value="completed" {{if eq .Status "completed"}}checked{{end}}> Completed <span class="count">{{.CompletedTaskCount}}</span>
+      </label>
+    </div>
+    <p class="muted">Every task from every account, grouped by due date.</p>
+  </div>
+</section>
+
+{{if not .DateGroups}}
+  <div class="empty">{{if .AccountFiltered}}No tasks match the filter.{{else}}No tasks due. Add tasks from an account.{{end}}</div>
+{{end}}
+
+<div class="date-groups">
+  {{range .DateGroups}}
+    <section class="date-group {{if lt .Date $.Today}}past{{end}}" data-date="{{.Date}}">
+      <header class="date-head">
+        <h2>{{dueLabel .Date}}</h2>
+        {{with dueWeekday .Date}}<span class="muted">{{.}}</span>{{end}}
+        <span class="count">{{len .Tasks}}</span>
+      </header>
+      <ul class="task-list date-task-list" data-task-list data-date="{{.Date}}">
+        {{range .Tasks}}{{template "task-row" .}}{{end}}
+      </ul>
+    </section>
+  {{end}}
+</div>
+{{end}}

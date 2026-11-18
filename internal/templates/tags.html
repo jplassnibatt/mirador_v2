@@ -1,0 +1,37 @@
+{{define "content"}}
+<section class="page-head">
+  <div>
+    <h1>Tags <span class="count">{{.TagCount}}</span></h1>
+    <p class="muted">Tags filter accounts and tasks. Use Edit to change a tag's name or color.</p>
+  </div>
+  <details class="add-panel inline">
+    <summary class="button">New tag</summary>
+    <form data-api="/api/v1/tags" data-method="POST" data-kind="tag-create">
+      <input name="name" placeholder="Tag name" required maxlength="200">
+      <input type="color" name="color" value="#3b82f6" aria-label="Tag color">
+      <button class="button small" type="submit">Create tag</button>
+    </form>
+  </details>
+</section>
+
+{{if not .Tags}}
+<div class="empty">No tags yet. Create one, then assign it to an account.</div>
+{{end}}
+
+<ul class="tag-list">
+  {{range .Tags}}
+  <li class="tag-row">
+    <div class="tag-row-main">
+      <span class="swatch" style="background: {{.Color}}" aria-hidden="true"></span>
+      <span class="tag-chip" style="--tag-color: {{.Color}}">{{.Name}}</span>
+      <span class="count">{{.UsageCount}} {{if eq .UsageCount 1}}account{{else}}accounts{{end}}</span>
+    </div>
+    <div class="row-actions">
+      <button class="button ghost tiny" type="button" data-edit-tag data-id="{{.ID}}" data-name="{{.Name}}"
+        data-color="{{.Color}}">Edit <span class="visually-hidden">tag "{{.Name}}"</span></button>
+      <button class="button ghost tiny danger" type="button" data-delete="/api/v1/tags/{{.ID}}">Delete tag</button>
+    </div>
+  </li>
+  {{end}}
+</ul>
+{{end}}

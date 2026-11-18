@@ -1,0 +1,25 @@
+/mirador
+*.db
+*.db-wal
+*.db-shm
+/backups/
+
+# Go
+*.exe
+/test/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDEs
+.idea/
+.vscode/
+
+# Local environment
+.env
+.env.local
+-H
+package.json
+package-lock.json
