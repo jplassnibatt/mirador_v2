@@ -2360,7 +2360,7 @@
   })();
 
   // Update check: compares the running build against the latest GitHub release.
-  // Clicking when an update is available opens the releases page.
+  // Clicking only opens the releases page when an update is actually available.
   (function setupUpdateCheck() {
     const UPDATE_CHECK_REPO = "jplassnibatt/mirador_v2";
     const btn = document.querySelector("[data-check-update]");
@@ -2368,7 +2368,21 @@
     // Strip a leading "v" so "1.0.0" compares equal to tag "v1.0.0".
     const APP_VERSION = (btn.getAttribute("data-app-version") || "dev").replace(/^v/, "");
 
+    // Simple semver "is a greater than b" for tags like 1.0.0, 1.0.1, 1.1.0.
+    function versionGt(a, b) {
+      const pa = a.split(".").map(Number);
+      const pb = b.split(".").map(Number);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const x = pa[i] || 0;
+        const y = pb[i] || 0;
+        if (x > y) return true;
+        if (x < y) return false;
+      }
+      return false;
+    }
+
     async function checkForUpdates() {
+      if (APP_VERSION === "dev") return;
       try {
         const res = await fetch(
           `https://api.github.com/repos/${UPDATE_CHECK_REPO}/releases/latest`,
@@ -2378,12 +2392,17 @@
         const data = await res.json();
         const latest = (data.tag_name || data.name || "").replace(/^v/, "");
         if (!latest) return;
-        const isNewer = APP_VERSION !== "dev" && latest !== APP_VERSION;
-        btn.classList.toggle("update-available", isNewer);
-        if (isNewer) {
+
+        if (versionGt(latest, APP_VERSION)) {
+          btn.classList.add("update-available");
           btn.textContent = `Update available (v${latest})`;
           btn.title = `Update available: v${latest}`;
+        } else if (versionGt(APP_VERSION, latest)) {
+          btn.classList.remove("update-available");
+          btn.textContent = `Ahead of latest version (v${latest})`;
+          btn.title = `You are running v${APP_VERSION}, latest is v${latest}`;
         } else {
+          btn.classList.remove("update-available");
           btn.textContent = "Up to date";
           btn.title = `Up to date (v${latest})`;
         }
@@ -2394,10 +2413,12 @@
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();
+      if (APP_VERSION === "dev") {
+        window.open(`https://github.com/${UPDATE_CHECK_REPO}/releases/latest`, "_blank");
+        return;
+      }
       if (btn.classList.contains("update-available")) {
         window.open(`https://github.com/${UPDATE_CHECK_REPO}/releases/latest`, "_blank");
-      } else {
-        checkForUpdates();
       }
     });
     checkForUpdates();
