@@ -14,6 +14,33 @@ default `127.0.0.1` bind unless you understand the exposure.
 v1.0.0 — first stable release. The JSON API under `/api/v1` is committed; any
 breaking change will be released as v2.
 
+## Download prebuilt binaries
+
+Prebuilt binaries for Linux and macOS are attached to each GitHub Release on
+this repository. No Go installation or compilation is needed — just download
+the binary for your platform and run it.
+
+| Platform | Binary |
+| --- | --- |
+| Linux (amd64) | `mirador-linux-amd64` |
+| macOS Apple Silicon (arm64) | `mirador-darwin-arm64` |
+| macOS Intel (amd64) | `mirador-darwin-amd64` |
+
+```sh
+# Make it executable and run
+chmod +x mirador-*
+./mirador-*
+```
+
+The binaries are unsigned. On macOS, Gatekeeper may block the first launch;
+right-click the binary → **Open** → **Open**, or run:
+
+```sh
+xattr -d com.apple.quarantine mirador-darwin-arm64
+```
+
+This is a one-time step per machine.
+
 ## Requirements to build
 
 - Go 1.22 or newer
@@ -21,7 +48,8 @@ breaking change will be released as v2.
   `github.com/mattn/go-sqlite3`, downloaded at build time)
 
 On Debian/Ubuntu, `build-essential` is enough for the C compiler.
-On macOS, install the Xcode Command Line Tools (`xcode-select --install`).
+On macOS, install the Xcode Command Line Tools (`xcode-select --install`) and
+Go (`brew install go` or from go.dev).
 
 ## Build and run
 
@@ -67,32 +95,71 @@ mirador -addr 127.0.0.1:9090 -db /path/to/mirador.db
 
 The process handles `SIGINT`/`SIGTERM` with a graceful shutdown.
 
-## Download prebuilt binaries
+## Create a macOS .app bundle locally
 
-Prebuilt binaries for Linux and macOS are attached to each GitHub Release on
-this repository. No Go installation or compilation is needed — just download
-the binary for your platform and run it.
-
-| Platform | Binary |
-| --- | --- |
-| Linux (amd64) | `mirador-linux-amd64` |
-| macOS Apple Silicon (arm64) | `mirador-darwin-arm64` |
-| macOS Intel (amd64) | `mirador-darwin-amd64` |
+You can package the Go binary into a regular macOS `.app` bundle so teammates
+can double-click it like a normal Mac app. This requires a Mac with Go and the
+Xcode Command Line Tools installed:
 
 ```sh
-# Make it executable and run
-chmod +x mirador-*
-./mirador-*
+xcode-select --install
 ```
 
-The binaries are unsigned. On macOS, Gatekeeper may block the first launch;
-right-click the binary → **Open** → **Open**, or run:
+### Build and package
 
 ```sh
-xattr -d com.apple.quarantine mirador-darwin-arm64
+# Apple Silicon (M1/M2/M3)
+GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=1.0.0" -o mirador-build .
+
+# Intel Mac
+GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=1.0.0" -o mirador-build .
 ```
 
-This is a one-time step per machine.
+Then create the bundle:
+
+```sh
+APP_NAME="Mirador"
+VERSION="1.0.0"
+
+rm -rf "$APP_NAME.app"
+mkdir -p "$APP_NAME.app/Contents/MacOS" "$APP_NAME.app/Contents/Resources"
+
+cp mirador-build "$APP_NAME.app/Contents/MacOS/mirador"
+chmod +x "$APP_NAME.app/Contents/MacOS/mirador"
+
+cat > "$APP_NAME.app/Contents/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key><string>mirador</string>
+	<key>CFBundleIdentifier</key><string>com.jplassnibatt.mirador</string>
+	<key>CFBundleName</key><string>Mirador</string>
+	<key>CFBundleDisplayName</key><string>Mirador</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleVersion</key><string>1.0.0</string>
+	<key>CFBundleShortVersionString</key><string>1.0.0</string>
+	<key>LSUIElement</key><true/>
+	<key>NSHighResolutionCapable</key><true/>
+</dict>
+</plist>
+PLIST
+
+# Ad-hoc sign so Gatekeeper doesn't block first launch on this machine
+codesign --sign - --force --deep "$APP_NAME.app" 2>/dev/null || true
+
+rm mirador-build
+```
+
+Double-click `Mirador.app` to launch, then open <http://127.0.0.1:8080> in your browser.
+
+The app runs as a background server (no Dock icon). If you prefer a Dock icon,
+remove the `LSUIElement` key from `Info.plist`.
+
+The bundle is ad-hoc signed only. Other teammates will see a Gatekeeper warning
+on first launch — they can right-click → **Open** → **Open**, or you can
+distribute a properly signed and notarized bundle if you have an Apple
+Developer account.
 
 ## Features
 - Categories with color, custom sort order, and persisted expand/collapse.

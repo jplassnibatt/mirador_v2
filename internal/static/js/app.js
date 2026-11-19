@@ -2362,7 +2362,7 @@
   // Update check: compares the running build against the latest GitHub release.
   // Clicking when an update is available opens the releases page.
   (function setupUpdateCheck() {
-    const UPDATE_CHECK_REPO = "jplassnibatt/mirador";
+    const UPDATE_CHECK_REPO = "jplassnibatt/mirador_v2";
     const btn = document.querySelector("[data-check-update]");
     if (!btn) return;
     const APP_VERSION = btn.getAttribute("data-app-version") || "dev";
