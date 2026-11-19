@@ -146,7 +146,7 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "+
-				"base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+				"connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
 		if !strings.HasPrefix(r.URL.Path, "/static/") {
 			w.Header().Set("Cache-Control", "no-store")
 		}

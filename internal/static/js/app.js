@@ -2365,7 +2365,8 @@
     const UPDATE_CHECK_REPO = "jplassnibatt/mirador_v2";
     const btn = document.querySelector("[data-check-update]");
     if (!btn) return;
-    const APP_VERSION = btn.getAttribute("data-app-version") || "dev";
+    // Strip a leading "v" so "1.0.0" compares equal to tag "v1.0.0".
+    const APP_VERSION = (btn.getAttribute("data-app-version") || "dev").replace(/^v/, "");
 
     async function checkForUpdates() {
       try {
@@ -2375,15 +2376,16 @@
         );
         if (!res.ok) return;
         const data = await res.json();
-        const latest = data.tag_name || data.name;
+        const latest = (data.tag_name || data.name || "").replace(/^v/, "");
         if (!latest) return;
-        const isNewer = APP_VERSION && latest !== APP_VERSION;
+        const isNewer = APP_VERSION !== "dev" && latest !== APP_VERSION;
         btn.classList.toggle("update-available", isNewer);
-        btn.title = isNewer
-          ? `Update available: ${latest}`
-          : `Up to date (${latest})`;
         if (isNewer) {
-          btn.textContent = `Update available (${latest})`;
+          btn.textContent = `Update available (v${latest})`;
+          btn.title = `Update available: v${latest}`;
+        } else {
+          btn.textContent = "Up to date";
+          btn.title = `Up to date (v${latest})`;
         }
       } catch {
         // Silently fail — network may be unavailable or rate-limited.
